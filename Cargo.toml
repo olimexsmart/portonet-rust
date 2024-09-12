@@ -1,0 +1,18 @@
+[package]
+name = "portonet"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.5"
+dotenv = "0.15.0"
+jsonwebtoken = "9.3.0"
+serde = { version = "1.0.208", features = ["derive"] }
+sqlx = { version = "0.8.0", features = [
+    "postgres",
+    "runtime-tokio",
+    "tls-native-tls",
+    "macros",
+] }
+tokio = { version = "1.39.2", features = ["rt-multi-thread"] }
+tracing-subscriber = "0.3.18"
