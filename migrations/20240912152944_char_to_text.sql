@@ -1,0 +1,10 @@
+-- Add migration script here
+ALTER TABLE keys
+  ALTER COLUMN uKey TYPE TEXT;
+
+ALTER TABLE system
+  ALTER COLUMN MP TYPE TEXT;
+
+ALTER TABLE logs
+  ALTER COLUMN APIName TYPE TEXT,
+  ALTER COLUMN params TYPE TEXT;

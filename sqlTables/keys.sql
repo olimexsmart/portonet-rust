@@ -7,3 +7,5 @@ CREATE TABLE keys (
   revoked smallint NOT NULL DEFAULT 0,
   UNIQUE (uKey)
 );
+
+COMMENT ON TABLE keys IS 'Contains keys used to open door along with supporting data.';

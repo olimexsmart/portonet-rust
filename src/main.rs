@@ -3,24 +3,26 @@ use axum::{
     Router,
     Json,
 };
-use serde::Serialize;
 use sqlx::postgres::PgPoolOptions;
-use dotenv::dotenv;
+use dotenvy::dotenv;
+mod db_structs;
+use db_structs::UKey;
 
-#[derive(Serialize)]
-struct ExampleData {
-    ukey: String,
-}
 
 // Handler function to fetch data from Postgres
-async fn fetch_data(pool: sqlx::PgPool) -> Result<Vec<ExampleData>, sqlx::Error> {
-    let rows = sqlx::query!("SELECT uKey FROM keys")
+async fn fetch_data(pool: sqlx::PgPool) -> Result<Vec<UKey>, sqlx::Error> {
+    let rows = sqlx::query!("SELECT * FROM keys")
         .fetch_all(&pool)
         .await?;
 
     let data = rows.into_iter()
-        .map(|row| ExampleData {
-            ukey: row.ukey
+        .map(|row| UKey {
+            id: row.id,
+            ukey: row.ukey,
+            exp_date: row.expdate,
+            last_used: row.lastused,
+            n_used: row.nused,
+            revoked: row.revoked != 0
         })
         .collect();
 
@@ -28,7 +30,7 @@ async fn fetch_data(pool: sqlx::PgPool) -> Result<Vec<ExampleData>, sqlx::Error>
 }
 
 // Handler to respond to API request
-async fn example_handler(pool: sqlx::PgPool) -> Json<Vec<ExampleData>> {
+async fn example_handler(pool: sqlx::PgPool) -> Json<Vec<UKey>> {
     // Fetch data from the database
     let data = fetch_data(pool).await.expect("Failed to fetch data");
 
