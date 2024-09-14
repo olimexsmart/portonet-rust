@@ -14,6 +14,7 @@ Learn Rust while refreshing a very useful project of mine.
 - `/addKey`
 	- Inputs: `[masterPassword, newKey, duration]`
 	- Verify master password validity and then insert new key with the specified duration
+	- If the key is already present, duration should be updated instead (key duration refresh)
 - `/getCounters
 	- Return: `{nOpenings: number, nErrors: number}`
 - `/openDoor`
@@ -52,9 +53,19 @@ Learn Rust while refreshing a very useful project of mine.
 - `/revokeKey`
 	- Inputs: `[masterPassword, key]
 	- Verify master password validity, set `revoked = 1` on specified key. Always return positive response to not hint on key existence 
+- `/changeMasterPassword`
+	- Inputs: `[oldMasterPassword, newMasterPassword]`
+	- If old password is correct, change to the new one
+	- At database creation the master password is set no null, call this method to initialize. Call with both parameter set to the same new password value.
 
 ### More Backend
 - Every API call is logged along with the parameters and IP
 - The door is opened through an API call configurable via ENV file
+- If system table is empty should be initialized 
+- Tables should be created if not existent
+- Every API that checks master password should also be subject to system block to avoid brute forcing
 
-### Tables
+### Run with auto-reload
+```
+cargo watch -c -w src/ -x 'run'
+```

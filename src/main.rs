@@ -12,6 +12,8 @@ mod api_list_keys;
 use api_list_keys::list_keys;
 mod api_add_key;
 use api_add_key::add_key;
+mod custom_error_mapper;
+
 
 #[tokio::main]
 async fn main() {
