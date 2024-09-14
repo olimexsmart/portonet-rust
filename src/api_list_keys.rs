@@ -1,7 +1,5 @@
-use axum::{extract::State, response::IntoResponse, Json};
-
-// Importing
 use crate::db_access::table_keys::get_keys;
+use axum::{extract::State, response::IntoResponse, Json};
 
 // Handler to respond to API request
 pub async fn list_keys(State(pool): State<sqlx::PgPool>) -> impl IntoResponse {

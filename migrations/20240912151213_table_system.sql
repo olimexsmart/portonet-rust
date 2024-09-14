@@ -1,7 +1,7 @@
 -- Add migration script here
 CREATE TABLE system (
   ID serial PRIMARY KEY,
-  MP char(20) NOT NULL,
+  MP TEXT NOT NULL,
   nOpenings int NOT NULL DEFAULT 0,
   nErrors int NOT NULL DEFAULT 0,
   nAttempts int DEFAULT 0,

@@ -1,6 +1,6 @@
 CREATE TABLE keys (
   ID serial PRIMARY KEY,
-  uKey char(20) NOT NULL,
+  uKey TEXT NOT NULL,
   expDate timestamp DEFAULT NULL,
   lastUsed timestamp DEFAULT NULL,
   nUsed int NOT NULL DEFAULT 0,

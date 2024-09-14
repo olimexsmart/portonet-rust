@@ -1,5 +1,8 @@
 // Importing crates
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 // Importing DB Access functions
@@ -7,6 +10,8 @@ mod db_access;
 // Importing API handlers
 mod api_list_keys;
 use api_list_keys::list_keys;
+mod api_add_key;
+use api_add_key::add_key;
 
 #[tokio::main]
 async fn main() {
@@ -22,6 +27,7 @@ async fn main() {
     // Build the application with a route
     let app = Router::new()
         .route("/listKeys", get(list_keys))
+        .route("/addKey", post(add_key))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000

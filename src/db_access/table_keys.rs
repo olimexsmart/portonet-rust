@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -27,4 +28,26 @@ pub async fn get_keys(pool: sqlx::PgPool) -> Result<Vec<UKey>, sqlx::Error> {
         .collect();
 
     Ok(data)
+}
+
+pub async fn insert_or_update_key(
+    pool: sqlx::PgPool,
+    ukey: String,
+    exp_date: NaiveDateTime,
+) -> Result<i32, sqlx::Error> {
+    // Insert the key into the database and return the inserted id
+    let result = sqlx::query!(
+        "INSERT INTO keys (ukey, expdate) VALUES ($1, $2)
+         ON CONFLICT (ukey) DO UPDATE SET expdate = EXCLUDED.expdate
+         RETURNING id",
+        ukey,
+        exp_date
+    )
+    .fetch_one(&pool)
+    .await;
+
+    match result {
+        Ok(row) => Ok(row.id),
+        Err(err) => Err(err),
+    }
 }
