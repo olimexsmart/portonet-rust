@@ -12,6 +12,8 @@ mod api_list_keys;
 use api_list_keys::list_keys;
 mod api_add_key;
 use api_add_key::add_key;
+mod api_get_counters;
+use api_get_counters::get_counters;
 mod custom_error_mapper;
 
 
@@ -30,6 +32,7 @@ async fn main() {
     let app = Router::new()
         .route("/listKeys", get(list_keys))
         .route("/addKey", post(add_key))
+        .route("/getCounters", get(get_counters))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
