@@ -12,7 +12,7 @@ pub struct UKey {
 }
 
 // Handler function to fetch data from Postgres
-pub async fn get_keys(pool: sqlx::PgPool) -> Result<Vec<UKey>, sqlx::Error> {
+pub async fn select_keys(pool: sqlx::PgPool) -> Result<Vec<UKey>, sqlx::Error> {
     let rows = sqlx::query!("SELECT * FROM keys").fetch_all(&pool).await?;
 
     let data = rows
@@ -50,4 +50,20 @@ pub async fn insert_or_update_key(
         Ok(row) => Ok(row.id),
         Err(err) => Err(err),
     }
+}
+
+pub async fn update_revoke_key(pool: sqlx::PgPool, key_to_revoke: String) -> Result<(), sqlx::Error> {
+    sqlx::query!("UPDATE keys SET revoked = 1 WHERE ukey = $1", key_to_revoke)
+        .execute(&pool)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn update_revoke_all_keys(pool: sqlx::PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query!("UPDATE keys SET revoked = 1")
+        .execute(&pool)
+        .await?;
+
+    Ok(())
 }

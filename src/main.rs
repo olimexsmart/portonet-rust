@@ -1,6 +1,6 @@
 // Importing crates
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 use dotenvy::dotenv;
@@ -14,6 +14,10 @@ mod api_add_key;
 use api_add_key::add_key;
 mod api_get_counters;
 use api_get_counters::get_counters;
+mod api_revoke_key;
+use api_revoke_key::revoke_key;
+mod api_revoke_all_keys;
+use api_revoke_all_keys::revoke_all_keys;
 mod custom_error_mapper;
 
 
@@ -30,9 +34,11 @@ async fn main() {
 
     // Build the application with a route
     let app = Router::new()
-        .route("/listKeys", get(list_keys))
-        .route("/addKey", post(add_key))
-        .route("/getCounters", get(get_counters))
+        .route("/list_keys", get(list_keys))
+        .route("/add_key", post(add_key))
+        .route("/get_counters", get(get_counters))
+        .route("/revoke_key", put(revoke_key))
+        .route("/revoke_all_keys", put(revoke_all_keys))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
