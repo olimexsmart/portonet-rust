@@ -19,10 +19,10 @@ pub async fn list_keys(
     State(pool): State<sqlx::PgPool>,
     Query(params): Query<KeyQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
-    match check_master_password(pool.clone(), params.master_password).await? {
+    match check_master_password(&pool, params.master_password).await? {
         true => {
             // If the master password is correct, fetch the keys
-            let data = select_keys(pool).await?;
+            let data = select_keys(&pool).await?;
             // Return the data as JSON
             Ok(Json(data))
         }

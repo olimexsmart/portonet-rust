@@ -17,9 +17,9 @@ pub async fn revoke_all_keys(
     State(pool): State<sqlx::PgPool>,
     Query(params): Query<KeyQueryParams>,
 ) -> Result<impl IntoResponse, AppError> {
-    match check_master_password(pool.clone(), params.master_password).await? {
+    match check_master_password(&pool, params.master_password).await? {
         true => {
-            update_revoke_all_keys(pool).await?;
+            update_revoke_all_keys(&pool).await?;
             Ok(())
         }
         false => {

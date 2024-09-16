@@ -7,7 +7,10 @@ use sqlx::Error as SqlxError;
 pub enum AppError {
     SqlxError(SqlxError),
     Unauthorized,
-    // Forbidden,
+    NotFound,
+    Expired,
+    Revoked,
+    Locked,
 }
 
 impl From<SqlxError> for AppError {
@@ -30,7 +33,10 @@ impl IntoResponse for AppError {
             AppError::Unauthorized => {
                 (StatusCode::UNAUTHORIZED, "Wrong Master Password").into_response()
             }
-            // AppError::Forbidden => (StatusCode::FORBIDDEN, "Wrong access key").into_response(),
+            AppError::NotFound => (StatusCode::NOT_FOUND, "Wrong access key").into_response(),
+            AppError::Expired => (StatusCode::REQUEST_TIMEOUT, "Key Expired").into_response(),
+            AppError::Revoked => (StatusCode::GONE, "Key Revoked").into_response(),
+            AppError::Locked => (StatusCode::LOCKED, "Too many failed attempts").into_response(),
         }
     }
 }

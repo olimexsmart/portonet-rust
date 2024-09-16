@@ -18,11 +18,14 @@ mod api_revoke_key;
 use api_revoke_key::revoke_key;
 mod api_revoke_all_keys;
 use api_revoke_all_keys::revoke_all_keys;
+mod api_open_door;
+use api_open_door::open_door;
 mod custom_error_mapper;
 
 
 #[tokio::main]
 async fn main() {
+    println!("PortoNet backend START");
     dotenv().ok(); // Load environment variables from .env file
                    // Create a connection pool for Postgres
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -39,6 +42,7 @@ async fn main() {
         .route("/get_counters", get(get_counters))
         .route("/revoke_key", put(revoke_key))
         .route("/revoke_all_keys", put(revoke_all_keys))
+        .route("/open_door", put(open_door))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
