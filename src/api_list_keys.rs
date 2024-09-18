@@ -1,6 +1,9 @@
 use crate::{
     custom_error_mapper::AppError,
-    db_access::{table_keys::select_keys, table_system::check_master_password},
+    db_access::{
+        table_keys::select_keys,
+        table_system::{check_master_password, handle_attempt_failed},
+    },
 };
 use axum::{
     extract::{Query, State},
@@ -27,7 +30,7 @@ pub async fn list_keys(
             Ok(Json(data))
         }
         false => {
-            // Master password is incorrect
+            handle_attempt_failed(&pool).await?;
             Err(AppError::Unauthorized)
         }
     }

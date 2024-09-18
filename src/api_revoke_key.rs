@@ -1,6 +1,9 @@
 use crate::{
     custom_error_mapper::AppError,
-    db_access::{table_keys::update_revoke_key, table_system::check_master_password},
+    db_access::{
+        table_keys::update_revoke_key,
+        table_system::{check_master_password, handle_attempt_failed},
+    },
 };
 use axum::{
     extract::{Query, State},
@@ -24,7 +27,7 @@ pub async fn revoke_key(
             Ok(())
         }
         false => {
-            // Master password is incorrect
+            handle_attempt_failed(&pool).await?;
             Err(AppError::Unauthorized)
         }
     }

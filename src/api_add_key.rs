@@ -1,9 +1,8 @@
-use crate::db_access::table_keys::insert_or_update_key;
-use crate::db_access::table_system::check_master_password;
+use crate::db_access::table_system::{check_master_password, handle_attempt_failed};
+use crate::{custom_error_mapper::AppError, db_access::table_keys::insert_or_update_key};
 use axum::{
     extract::{Query, State},
-    http::StatusCode,
-    response::IntoResponse
+    response::IntoResponse,
 };
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Deserializer};
@@ -21,31 +20,22 @@ pub struct KeyQueryParams {
 pub async fn add_key(
     State(pool): State<sqlx::PgPool>,
     Query(params): Query<KeyQueryParams>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AppError> {
     // First, handle the result of checking the master password
-    match check_master_password(&pool, params.master_password).await {
-        Ok(true) => {
+    match check_master_password(&pool, params.master_password).await? {
+        true => {
             // Master password is correct, proceed with inserting or updating the key
             let result = insert_or_update_key(
                 &pool,
                 params.new_key.clone(),
                 (Utc::now() + params.duration).naive_utc(),
             )
-            .await;
-
-            // Match on the result of the insertion
-            match result {
-                Ok(result) => (StatusCode::CREATED, result.to_string()).into_response(),
-                Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response(),
-            }
+            .await?;
+            Ok(result.to_string())
         }
-        Ok(false) => {
-            // Master password is incorrect
-            (StatusCode::UNAUTHORIZED, "Wrong Master Password").into_response()
-        }
-        Err(err) => { // TODO uniform erro handling
-            // An error occurred while checking the master password
-            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+        false => {
+            handle_attempt_failed(&pool).await?;
+            Err(AppError::Unauthorized)
         }
     }
 }
