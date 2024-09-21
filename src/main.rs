@@ -1,3 +1,7 @@
+use api::{
+    api_add_key::add_key, api_get_counters::get_counters, api_list_keys::list_keys,
+    api_open_door::open_door, api_revoke_all_keys::revoke_all_keys, api_revoke_key::revoke_key,
+};
 // Importing crates
 use axum::{
     routing::{get, post, put},
@@ -8,18 +12,7 @@ use sqlx::postgres::PgPoolOptions;
 // Importing DB Access functions
 mod db_access;
 // Importing API handlers
-mod api_list_keys;
-use api_list_keys::list_keys;
-mod api_add_key;
-use api_add_key::add_key;
-mod api_get_counters;
-use api_get_counters::get_counters;
-mod api_revoke_key;
-use api_revoke_key::revoke_key;
-mod api_revoke_all_keys;
-use api_revoke_all_keys::revoke_all_keys;
-mod api_open_door;
-use api_open_door::open_door;
+mod api;
 mod custom_error_mapper;
 
 #[tokio::main]
