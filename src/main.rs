@@ -22,7 +22,6 @@ mod api_open_door;
 use api_open_door::open_door;
 mod custom_error_mapper;
 
-
 #[tokio::main]
 async fn main() {
     println!("PortoNet backend START");

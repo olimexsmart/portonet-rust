@@ -4,7 +4,7 @@ use axum::{
 };
 use sqlx::Error as SqlxError;
 
-pub enum AppError {
+pub enum APIError {
     SqlxError(SqlxError),
     Unauthorized,
     NotFound,
@@ -13,16 +13,16 @@ pub enum AppError {
     Locked,
 }
 
-impl From<SqlxError> for AppError {
+impl From<SqlxError> for APIError {
     fn from(err: SqlxError) -> Self {
-        AppError::SqlxError(err)
+        APIError::SqlxError(err)
     }
 }
 
-impl IntoResponse for AppError {
+impl IntoResponse for APIError {
     fn into_response(self) -> Response {
         match self {
-            AppError::SqlxError(err) => {
+            APIError::SqlxError(err) => {
                 // For database errors, return a 500 Internal Server Error
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -30,13 +30,13 @@ impl IntoResponse for AppError {
                 )
                     .into_response()
             }
-            AppError::Unauthorized => {
+            APIError::Unauthorized => {
                 (StatusCode::UNAUTHORIZED, "Wrong Master Password").into_response()
             }
-            AppError::NotFound => (StatusCode::NOT_FOUND, "Wrong access key").into_response(),
-            AppError::Expired => (StatusCode::REQUEST_TIMEOUT, "Key Expired").into_response(),
-            AppError::Revoked => (StatusCode::GONE, "Key Revoked").into_response(),
-            AppError::Locked => (StatusCode::LOCKED, "Too many failed attempts").into_response(),
+            APIError::NotFound => (StatusCode::NOT_FOUND, "Wrong access key").into_response(),
+            APIError::Expired => (StatusCode::REQUEST_TIMEOUT, "Key Expired").into_response(),
+            APIError::Revoked => (StatusCode::GONE, "Key Revoked").into_response(),
+            APIError::Locked => (StatusCode::LOCKED, "Too many failed attempts").into_response(),
         }
     }
 }

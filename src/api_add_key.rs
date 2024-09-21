@@ -1,26 +1,39 @@
+use crate::db_access::table_logs::insert_log;
 use crate::db_access::table_system::{check_master_password, handle_attempt_failed};
-use crate::{custom_error_mapper::AppError, db_access::table_keys::insert_or_update_key};
+use crate::{custom_error_mapper::APIError, db_access::table_keys::insert_or_update_key};
 use axum::{
     extract::{Query, State},
     response::IntoResponse,
 };
 use chrono::{Duration, Utc};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct KeyQueryParams {
     master_password: String,
     new_key: String,
-    #[serde(deserialize_with = "deserialize_duration")] // Custom deserializer
+    #[serde(
+        deserialize_with = "deserialize_duration",
+        serialize_with = "serialize_duration"
+    )] // Custom deserializer
     duration: Duration,
 }
 
-// Handler to respond to API request
+use ::function_name::named;
+
+#[named]
 pub async fn add_key(
     State(pool): State<sqlx::PgPool>,
     Query(params): Query<KeyQueryParams>,
-) -> Result<impl IntoResponse, AppError> {
+) -> Result<impl IntoResponse, APIError> {
+    insert_log(
+        &pool,
+        function_name!(),
+        Some(serde_json::to_string(&params).unwrap()),
+    )
+    .await?;
+
     // First, handle the result of checking the master password
     match check_master_password(&pool, params.master_password).await? {
         true => {
@@ -35,12 +48,14 @@ pub async fn add_key(
         }
         false => {
             handle_attempt_failed(&pool).await?;
-            Err(AppError::Unauthorized)
+            Err(APIError::Unauthorized)
         }
     }
 }
 
-// Custom deserialization logic for `chrono::Duration`
+/*
+ * PRIVATE
+ */
 fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
@@ -62,4 +77,19 @@ where
     }
 
     Err(serde::de::Error::custom("Invalid duration format"))
+}
+
+fn serialize_duration<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let formatted_duration = if duration.num_hours() % 24 != 0 {
+        format!("{}h", duration.num_hours())
+    } else if duration.num_days() % 30 != 0 {
+        format!("{}d", duration.num_days())
+    } else {
+        format!("{}m", duration.num_days() / 30) // Approximate months as 30 days
+    };
+
+    serializer.serialize_str(&formatted_duration)
 }
