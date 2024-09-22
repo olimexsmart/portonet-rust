@@ -1,6 +1,5 @@
 use api::{
-    api_add_key::add_key, api_get_counters::get_counters, api_list_keys::list_keys,
-    api_open_door::open_door, api_revoke_all_keys::revoke_all_keys, api_revoke_key::revoke_key,
+    api_add_key::add_key, api_get_counters::get_counters, api_list_keys::list_keys, api_list_logs::list_logs, api_open_door::open_door, api_revoke_all_keys::revoke_all_keys, api_revoke_key::revoke_key
 };
 // Importing crates
 use axum::{
@@ -35,6 +34,7 @@ async fn main() {
         .route("/revoke_key", put(revoke_key))
         .route("/revoke_all_keys", put(revoke_all_keys))
         .route("/open_door", put(open_door))
+        .route("/list_logs", get(list_logs))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000

@@ -1,4 +1,5 @@
 use chrono::Utc;
+use serde::Serialize;
 
 pub async fn insert_log(
     pool: &sqlx::PgPool,
@@ -15,4 +16,30 @@ pub async fn insert_log(
     .await?;
 
     Ok(())
+}
+
+#[derive(Serialize)]
+pub struct ULog {
+    pub id: i32,
+    pub api_name: String,
+    pub request_date: chrono::NaiveDateTime,
+    pub params: Option<String>,
+}
+
+pub async fn select_logs(pool: &sqlx::PgPool, limit: i64) -> Result<Vec<ULog>, sqlx::Error> {
+    let rows = sqlx::query!("SELECT * FROM logs ORDER BY daterequest DESC LIMIT $1", limit)
+        .fetch_all(pool)
+        .await?;
+
+    let data = rows
+        .into_iter()
+        .map(|row| ULog {
+            id: row.id,
+            api_name: row.apiname,
+            request_date: row.daterequest,
+            params: row.params,
+        })
+        .collect();
+
+    Ok(data)
 }
