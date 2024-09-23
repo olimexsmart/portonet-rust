@@ -10,9 +10,6 @@ use axum::{
 };
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
-// DB initializer function
-mod initialize_db;
-use initialize_db::init_db_with_tables;
 // Importing DB Access functions
 mod db_access;
 // Importing API handlers
@@ -31,8 +28,6 @@ async fn main() {
         .connect(&database_url)
         .await
         .expect("Failed to create Postgres connection pool");
-    // Initialize DB with the necessary tables
-    let _ = init_db_with_tables(&pool).await;
     // Build the application with a route
     let app = Router::new()
         .route("/list_keys", get(list_keys))
