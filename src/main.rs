@@ -1,5 +1,7 @@
 use api::{
-    api_add_key::add_key, api_get_counters::get_counters, api_list_keys::list_keys, api_list_logs::list_logs, api_open_door::open_door, api_revoke_all_keys::revoke_all_keys, api_revoke_key::revoke_key
+    api_add_key::add_key, api_get_counters::get_counters, api_list_keys::list_keys,
+    api_list_logs::list_logs, api_open_door::open_door, api_revoke_all_keys::revoke_all_keys,
+    api_revoke_key::revoke_key,
 };
 // Importing crates
 use axum::{
@@ -8,6 +10,9 @@ use axum::{
 };
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
+// DB initializer function
+mod initialize_db;
+use initialize_db::init_db_with_tables;
 // Importing DB Access functions
 mod db_access;
 // Importing API handlers
@@ -17,15 +22,17 @@ mod custom_error_mapper;
 #[tokio::main]
 async fn main() {
     println!("PortoNet backend START");
-    dotenv().ok(); // Load environment variables from .env file
-                   // Create a connection pool for Postgres
+    // Load environment variables from .env file
+    dotenv().ok();
+    // Create a connection pool for Postgres
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
         .await
         .expect("Failed to create Postgres connection pool");
-
+    // Initialize DB with the necessary tables
+    let _ = init_db_with_tables(&pool).await;
     // Build the application with a route
     let app = Router::new()
         .route("/list_keys", get(list_keys))
