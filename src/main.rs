@@ -8,6 +8,7 @@ use axum::{
     routing::{get, post, put},
     Router,
 };
+use tower_http::services::ServeDir;
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 // Importing DB Access functions
@@ -37,6 +38,7 @@ async fn main() {
         .route("/revoke_all_keys", put(revoke_all_keys))
         .route("/open_door", put(open_door))
         .route("/list_logs", get(list_logs))
+        .nest_service("/", ServeDir::new("frontend"))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
