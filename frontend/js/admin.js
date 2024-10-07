@@ -156,7 +156,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             badgeClass = 'warning'
                             badgeText = 'EXPIRED'
                         }
-                        let html = `<li class="list-group-item d-flex justify-content-between align-items-start">` +
+                        let html =
+                            `<li class="list-group-item d-flex justify-content-between align-items-start">` +
                             `<div class="ms-2 me-auto">` +
                             `<div class="fw-bold fs-4">${j[i].ukey}</div>` +
                             `<b>Last used:</b> ${j[i].last_used}</br>` +
@@ -173,11 +174,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 response.json().then((j) => {
                     listOl.replaceChildren();
                     for (let i = 0; i < j.length; i++) {
-                        let html = `<li class="list-group-item d-flex justify-content-between align-items-start">` +
+                        let html =
+                            `<li class="list-group-item d-flex justify-content-between align-items-start">` +
                             `<div class="ms-2 me-auto">` +
                             `<div class="fw-bold fs-4">${j[i].api_name}</div>` +
-                            `<b>Date:</b> ${j[i].request_date}</br>` +
-                            `<b>Parameters:</b> ${j[i].params}</br>` +
+                            `<b>Date:</b> ${j[i].request_date}</br>`;
+                        let p = JSON.parse(j[i].params)
+                        if (p != null) {
+                            html += `<b>Parameters:</b></br>`
+                            for (const [key, value] of Object.entries(p)) {
+                                html += `<i>${key}</i>: ${value}</br>`;
+                            }
+                        }
+                        html +=
                             `</div>` +
                             `</li>`;
                         listOl.innerHTML += html;

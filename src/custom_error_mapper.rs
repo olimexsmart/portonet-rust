@@ -1,3 +1,4 @@
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -11,6 +12,8 @@ pub enum APIError {
     Expired,
     Revoked,
     Locked,
+    HomeAssistantError,
+    EnvError(String),
 }
 
 impl From<SqlxError> for APIError {
@@ -37,6 +40,16 @@ impl IntoResponse for APIError {
             APIError::Expired => (StatusCode::REQUEST_TIMEOUT, "Key Expired").into_response(),
             APIError::Revoked => (StatusCode::GONE, "Key Revoked").into_response(),
             APIError::Locked => (StatusCode::LOCKED, "Too many failed attempts").into_response(),
+            APIError::HomeAssistantError => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Failed request to Home Assistant",
+            )
+                .into_response(),
+            APIError::EnvError(var_name) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Missing ENV variable {}", var_name),
+            )
+                .into_response(),
         }
     }
 }
