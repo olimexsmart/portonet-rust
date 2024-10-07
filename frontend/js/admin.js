@@ -1,3 +1,14 @@
+const API_LIST_KEYS = 'list_keys'
+const API_ADD = 'add_key'
+const API_COUNTERS = 'get_counters'
+const API_REVOKE = 'revoke_key'
+const API_REVOKE_ALL = 'revoke_all_keys'
+const API_OPEN = 'open_door'
+const API_LIST_LOGS = 'list_logs'
+
+// Common variabile
+let mode, interval, justTest
+
 // Once DOM is loaded, attach events
 document.addEventListener("DOMContentLoaded", () => {
     const submitBtn = document.getElementById('submit');
@@ -17,68 +28,63 @@ document.addEventListener("DOMContentLoaded", () => {
     // List
     const listOl = document.getElementById('list');
 
-    // Remember the last button clicked
-    let mode = 'add.php';
-    let interval = 0;
-    let justTest = 0;
-
     // Manage mode button group
     document.getElementById('btnNuovo').addEventListener('click', () => {
         oreDiv.classList.remove('d-none');
         userStuff.classList.remove('d-none');
         adminStuff.classList.remove('d-none');
         listOl.classList.add('d-none');
-        mode = 'add.php';
+        mode = API_ADD;
     });
     document.getElementById('btnSvuota').addEventListener('click', () => {
         oreDiv.classList.add('d-none');
         userStuff.classList.add('d-none');
         adminStuff.classList.remove('d-none');
         listOl.classList.add('d-none');
-        mode = 'revokeAll.php';
+        mode = API_REVOKE_ALL;
     });
     document.getElementById('btnRevoca').addEventListener('click', () => {
         oreDiv.classList.add('d-none');
         userStuff.classList.remove('d-none');
         adminStuff.classList.remove('d-none');
         listOl.classList.add('d-none');
-        mode = 'revoke.php';
+        mode = API_REVOKE;
     });
     document.getElementById('btnTest').addEventListener('click', () => {
         oreDiv.classList.add('d-none');
         userStuff.classList.remove('d-none');
         adminStuff.classList.add('d-none');
         listOl.classList.add('d-none');
-        mode = 'enter.php';
-        justTest = 1;
+        mode = API_OPEN;
+        justTest = 1; // TODO this is not implemented
     });
     document.getElementById('btnKeys').addEventListener('click', () => {
         oreDiv.classList.add('d-none');
         userStuff.classList.add('d-none');
         adminStuff.classList.remove('d-none');
         listOl.classList.remove('d-none');
-        mode = 'keyList.php';
+        mode = API_LIST_KEYS;
     });
     document.getElementById('btnLog').addEventListener('click', () => {
         oreDiv.classList.add('d-none');
         userStuff.classList.add('d-none');
         adminStuff.classList.remove('d-none');
         listOl.classList.remove('d-none');
-        mode = 'logList.php';
+        mode = API_LIST_LOGS;
     });
 
     // Manage interval button group
     document.getElementById('btn6Ore').addEventListener('click', () => {
-        interval = 0;
+        interval = '6h';
     });
     document.getElementById('btn3Giorni').addEventListener('click', () => {
-        interval = 1;
+        interval = '3d';
     });
     document.getElementById('btn30Giorni').addEventListener('click', () => {
-        interval = 2;
+        interval = '30d';
     });
     document.getElementById('btn1Anno').addEventListener('click', () => {
-        interval = 3;
+        interval = '1y';
     });
 
     // Simulate click event when pressing enter
@@ -95,17 +101,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Main button submission
     submitBtn.addEventListener('click', () => {
-        const url = `API/${mode}?MP=${MP.value}&uKey=${userkeyIn.value}&interval=${interval}&justTest=${justTest}`;
+        // Request options
         const options = {
-            method: "GET",
+            method: 'GET',
             timeout: 3000
         };
+        // Build request url depending on action
+        let url
+        switch (mode) {
+            case API_ADD:
+                options.method = 'POST'
+                url = `add_key?master_password=${MP.value}&new_key=${userkeyIn.value}&duration=${interval}`
+                break
+            case API_COUNTERS:
+                url = 'get_counters'
+                break
+            case API_LIST_KEYS:
+                url = `list_keys?master_password=${MP.value}`
+                break
+            case API_LIST_LOGS:
+                url = `list_logs?master_password=${MP.value}&limit=50`
+                break
+            case API_OPEN:
+                options.method = 'PUT'
+                url = `open_door?u_key=${userkeyIn.value}`
+                break
+            case API_REVOKE:
+                options.method = 'DELETE'
+                url = `revoke_key?master_password=${MP.value}&key_to_revoke=${userkeyIn.value}`
+                break
+            case API_REVOKE_ALL:
+                options.method = 'DELETE'
+                url = `revoke_key?master_password=${MP.value}`
+                break
+            default:
+                alert('Invalid mode: ' + mode)
+                break;
+        }
 
         fetch(url, options).then(response => {
             loaderDiv.style.display = "none";
 
-            // Do not open the modal if we need to display the list
-            if (mode == 'keyList.php') {
+            // Do not open the modal if we need to display some return data
+            if (mode == API_LIST_KEYS) {
                 response.json().then((j) => {
                     listOl.replaceChildren();
                     for (let i = 0; i < j.length; i++) {
@@ -114,16 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (j[i].revoked == '1') {
                             badgeClass = 'danger'
                             badgeText = 'REVOKED'
-                        } else if (Date.parse(j[i].expDate) - Date.now() < 0) {
+                        } else if (Date.parse(j[i].exp_date) - Date.now() < 0) {
                             badgeClass = 'warning'
                             badgeText = 'EXPIRED'
                         }
                         let html = `<li class="list-group-item d-flex justify-content-between align-items-start">` +
                             `<div class="ms-2 me-auto">` +
-                            `<div class="fw-bold fs-4">${j[i].uKey}</div>` +
-                            `<b>Last used:</b> ${j[i].lastUsed}</br>` +
-                            `<b>Expiration date:</b> ${j[i].expDate}</br>` +
-                            `<b>Used</b> ${j[i].nUsed} times` +
+                            `<div class="fw-bold fs-4">${j[i].ukey}</div>` +
+                            `<b>Last used:</b> ${j[i].last_used}</br>` +
+                            `<b>Expiration date:</b> ${j[i].exp_date}</br>` +
+                            `<b>Used</b> ${j[i].n_used} times` +
                             `</div>` +
                             `<span class="badge bg-${badgeClass} rounded-pill">${badgeText}` +
                             `</span>` +
@@ -131,14 +169,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         listOl.innerHTML += html;
                     }
                 });
-            } else if (mode == 'logList.php') {
+            } else if (mode == API_LIST_LOGS) {
                 response.json().then((j) => {
                     listOl.replaceChildren();
                     for (let i = 0; i < j.length; i++) {
                         let html = `<li class="list-group-item d-flex justify-content-between align-items-start">` +
                             `<div class="ms-2 me-auto">` +
-                            `<div class="fw-bold fs-4">${j[i].APIName}</div>` +
-                            `<b>Date:</b> ${j[i].dateRequest}</br>` +
+                            `<div class="fw-bold fs-4">${j[i].api_name}</div>` +
+                            `<b>Date:</b> ${j[i].request_date}</br>` +
                             `<b>Parameters:</b> ${j[i].params}</br>` +
                             `</div>` +
                             `</li>`;
@@ -148,8 +186,9 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 listOl.classList.add('d-none');
                 response.text().then((text) => {
-                    bodyMod.innerHTML = `<b>HTTP Status Code: </b>${response.status}</br>
-                    <b>Response: </b>${text}`;
+                    bodyMod.innerHTML = `<b>HTTP Status Code: </b>${response.status}</br>`
+                    if (text.length > 0)
+                        bodyMod.innerHTML += `<b>Response: </b>${text}`;
                     openMod.show();
                 });
             }
@@ -159,5 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         loaderDiv.style.display = "block";
     });
+
+
+    /*
+     * Init default state emulating clicks
+     */
+    document.getElementById('btnNuovo').click()
+    document.getElementById('btn6Ore').click()
 })
 

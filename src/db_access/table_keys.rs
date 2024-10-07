@@ -92,7 +92,7 @@ pub async fn update_revoke_key(
     sqlx::query!("UPDATE keys SET revoked = 1 WHERE ukey = $1", key_to_revoke)
         .execute(pool)
         .await?;
-
+    // TODO return number of modified rows and return 404 if = 0
     Ok(())
 }
 

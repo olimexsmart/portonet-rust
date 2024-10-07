@@ -5,7 +5,7 @@ use api::{
 };
 // Importing crates
 use axum::{
-    routing::{get, post, put},
+    routing::{get, post, put, delete},
     Router,
 };
 use tower_http::services::ServeDir;
@@ -34,8 +34,8 @@ async fn main() {
         .route("/list_keys", get(list_keys))
         .route("/add_key", post(add_key))
         .route("/get_counters", get(get_counters))
-        .route("/revoke_key", put(revoke_key))
-        .route("/revoke_all_keys", put(revoke_all_keys))
+        .route("/revoke_key", delete(revoke_key))
+        .route("/revoke_all_keys", delete(revoke_all_keys))
         .route("/open_door", put(open_door))
         .route("/list_logs", get(list_logs))
         .nest_service("/", ServeDir::new("frontend"))

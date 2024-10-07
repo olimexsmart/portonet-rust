@@ -42,9 +42,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Main button submission
     submitBtn.addEventListener('click', () => {
-        const url = `API/enter.php?uKey=${keyIn.value}`;
+        const url = `open_door?u_key=${keyIn.value}`;
         const options = {
-            method: "GET",
+            method: "PUT",
             timeout: 3000
         };
 

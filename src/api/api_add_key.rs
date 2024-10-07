@@ -38,13 +38,13 @@ pub async fn add_key(
     match check_master_password(&pool, params.master_password).await? {
         true => {
             // Master password is correct, proceed with inserting or updating the key
-            let result = insert_or_update_key(
+            insert_or_update_key(
                 &pool,
                 params.new_key.clone(),
                 (Utc::now() + params.duration).naive_utc(),
             )
             .await?;
-            Ok(result.to_string())
+            Ok("OK")
         }
         false => {
             handle_attempt_failed(&pool).await?;
@@ -72,7 +72,11 @@ where
         }
     } else if let Some(months) = s.strip_suffix("m") {
         if let Ok(m) = i64::from_str(months) {
-            return Ok(Duration::days(m * 30)); // Approximate month as 30 days
+            return Ok(Duration::days(m * 30));
+        }
+    } else if let Some(years) = s.strip_suffix("y") {
+        if let Ok(y) = i64::from_str(years) {
+            return Ok(Duration::days(y * 365));
         }
     }
 

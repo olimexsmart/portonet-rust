@@ -34,7 +34,7 @@ pub async fn open_door(
                     // TODO implement env-based API call
                     println!("door opened TODO proper call");
                     handle_attempt_ok(&pool).await?;
-                    Ok(())
+                    Ok("OK")
                 }
                 KeyCheckResult::Expired => {
                     handle_attempt_failed(&pool).await?;
