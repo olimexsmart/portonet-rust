@@ -19,7 +19,7 @@ use ::function_name::named;
 
 #[named]
 pub async fn revoke_all_keys(
-    State(pool): State<sqlx::PgPool>,
+    State(pool): State<sqlx::SqlitePool>,
     Query(params): Query<KeyQueryParams>,
 ) -> Result<impl IntoResponse, APIError> {
     insert_log(

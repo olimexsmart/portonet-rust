@@ -24,7 +24,7 @@ use ::function_name::named;
 
 #[named]
 pub async fn add_key(
-    State(pool): State<sqlx::PgPool>,
+    State(pool): State<sqlx::SqlitePool>,
     Query(params): Query<KeyQueryParams>,
 ) -> Result<impl IntoResponse, APIError> {
     insert_log(

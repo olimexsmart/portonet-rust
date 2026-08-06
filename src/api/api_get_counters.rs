@@ -8,7 +8,7 @@ use crate::{
 use ::function_name::named;
 
 #[named]
-pub async fn get_counters(State(pool): State<sqlx::PgPool>) -> Result<impl IntoResponse, APIError> {
+pub async fn get_counters(State(pool): State<sqlx::SqlitePool>) -> Result<impl IntoResponse, APIError> {
     insert_log(&pool, function_name!(), None).await?;
 
     let data = get_system_counters(&pool).await?;

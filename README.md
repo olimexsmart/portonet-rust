@@ -1,13 +1,11 @@
 Learn Rust while refreshing a very useful project of mine. 
 ### GOALS V1
-- [ ] Rewrite all PHP functionality in Rust
-- [ ] Use SQLite or PostgreSQL?
+- [x] Rewrite all PHP functionality in Rust
+- [x] Use SQLite
 - [ ] Do not modify frontend for the moment except for some API calls
-- [ ] Make it a system service that start at startup
-- [ ] Configure Apache proxy to point the backend
+- [ ] Make it a docker
 ### GOALS V2
 - [ ] Bump frontend to a recent Bootstrap version
-- [ ] Make it an Angular WebApp
 - [ ] Implement Web AUTH for biometric login
 
 ### APIs
@@ -15,7 +13,7 @@ Learn Rust while refreshing a very useful project of mine.
 	- Inputs: `[masterPassword, newKey, duration]`
 	- Verify master password validity and then insert new key with the specified duration
 	- If the key is already present, duration should be updated instead (key duration refresh)
-- `/get_counters
+- `/get_counters`
 	- Return: `{nOpenings: number, nErrors: number}`
 - `/open_door`
 	- Inputs: `[key, dryRun]`
@@ -35,7 +33,7 @@ Learn Rust while refreshing a very useful project of mine.
 	        "expDate": "2025-07-25 19:47:04",
 	        "lastUsed": "2024-09-06 18:49:35",
 	        "nUsed": number,
-	        "revoked": boolen
+	        "revoked": boolean
 		}
 ```
 - `/getLog`
@@ -61,11 +59,27 @@ Learn Rust while refreshing a very useful project of mine.
 	- If old password is correct, change to the new one
 	- At database creation the master password is set no null, call this method to initialize. Call with both parameter set to the same new password value.
 
+### Database setup
+
+Set `DATABASE_URL` to a SQLite URL, for example:
+
+```
+DATABASE_URL=sqlite://portonet.sqlite
+```
+
+The database file and its tables are created automatically when the backend starts.
+
+SQLx compile-time query checking also needs `DATABASE_URL` while building:
+
+```
+DATABASE_URL=sqlite:///absolute/path/portonet.sqlite cargo check
+```
+
 ### More Backend
 - [ ] Every API call is logged along with the parameters and IP
-- [ ] The door is opened through an API call configurable via ENV file
-- [ ] If system table is empty should be initialized 
-- [ ] Tables should be created if not existent
+- [x] The door is opened through an API call configurable via ENV file
+- [x] If system table is empty should be initialized 
+- [x] Tables should be created if not existent
 - [ ] Every API that checks master password should also be subject to system block to avoid brute forcing
 
 ### Run with auto-reload

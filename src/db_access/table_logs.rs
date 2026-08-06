@@ -2,19 +2,19 @@ use chrono::Utc;
 use serde::Serialize;
 
 pub async fn insert_log(
-    pool: &sqlx::PgPool,
+    pool: &sqlx::SqlitePool,
     api_name: &str,
     params: Option<String>,
 ) -> Result<(), sqlx::Error> {
+    let request_date = Utc::now().naive_utc();
     sqlx::query!(
-        "INSERT INTO logs (apiname, daterequest, params) VALUES($1, $2, $3)",
+        "INSERT INTO logs (apiname, daterequest, params) VALUES (?, ?, ?)",
         api_name,
-        Utc::now().naive_local(),
+        request_date,
         params
     )
     .execute(pool)
     .await?;
-
     Ok(())
 }
 
@@ -26,20 +26,22 @@ pub struct ULog {
     pub params: Option<String>,
 }
 
-pub async fn select_logs(pool: &sqlx::PgPool, limit: i64) -> Result<Vec<ULog>, sqlx::Error> {
-    let rows = sqlx::query!("SELECT * FROM logs ORDER BY daterequest DESC LIMIT $1", limit)
-        .fetch_all(pool)
-        .await?;
+pub async fn select_logs(pool: &sqlx::SqlitePool, limit: i64) -> Result<Vec<ULog>, sqlx::Error> {
+    let rows = sqlx::query!(
+        "SELECT id as \"id!: i64\", apiname, daterequest, params
+         FROM logs ORDER BY daterequest DESC LIMIT ?",
+        limit
+    )
+    .fetch_all(pool)
+    .await?;
 
-    let data = rows
+    Ok(rows
         .into_iter()
         .map(|row| ULog {
-            id: row.id,
+            id: row.id as i32,
             api_name: row.apiname,
             request_date: row.daterequest,
             params: row.params,
         })
-        .collect();
-
-    Ok(data)
+        .collect())
 }

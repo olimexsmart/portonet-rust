@@ -10,7 +10,10 @@ use axum::{
 };
 use tower_http::services::ServeDir;
 use dotenvy::dotenv;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::sqlite::SqlitePoolOptions;
+use std::str::FromStr;
+use std::time::Duration;
 // Importing DB Access functions
 mod db_access;
 // Importing API handlers
@@ -22,13 +25,22 @@ async fn main() {
     println!("PortoNet backend START");
     // Load environment variables from .env file
     dotenv().ok();
-    // Create a connection pool for Postgres
+    // Create a connection pool for SQLite
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let pool = PgPoolOptions::new()
+    let options = SqliteConnectOptions::from_str(&database_url)
+        .expect("DATABASE_URL must be a valid SQLite URL")
+        .create_if_missing(true)
+        .busy_timeout(Duration::from_secs(5));
+    let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&database_url)
+        .connect_with(options)
         .await
-        .expect("Failed to create Postgres connection pool");
+        .expect("Failed to create SQLite connection pool");
+
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run database migrations");
     // Build the application with a route
     let app = Router::new()
         .route("/list_keys", get(list_keys))
