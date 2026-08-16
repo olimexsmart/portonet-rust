@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::custom_error_mapper::APIError;
-use crate::db_access::table_keys::{check_key, KeyCheckResult};
+use crate::db_access::table_keys::{KeyCheckResult, check_key, update_key_last_used};
 use crate::db_access::table_logs::insert_log;
 use crate::db_access::table_system::{handle_attempt_failed, handle_attempt_ok, is_system_locked};
 use axum::{
@@ -32,7 +32,7 @@ pub async fn open_door(
 
     match is_system_locked(&pool).await? {
         false => {
-            match check_key(&pool, params.u_key).await? {
+            match check_key(&pool, &params.u_key).await? {
                 KeyCheckResult::Valid => {
                     // Send the POST request to Home Assistant
                     let bearer_token_home_assistant = std::env::var("BEARER_HOME_ASSISTANT")
@@ -66,6 +66,7 @@ pub async fn open_door(
                         return Err(APIError::HomeAssistantError);
                     }
                     // Succesful return point
+                    update_key_last_used(&pool, params.u_key).await?;
                     handle_attempt_ok(&pool).await?;
                     Ok("OK")
                 }

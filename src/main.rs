@@ -16,6 +16,7 @@ use std::str::FromStr;
 use std::time::Duration;
 // Importing DB Access functions
 mod db_access;
+use db_access::initialize_database;
 // Importing API handlers
 mod api;
 mod custom_error_mapper;
@@ -37,10 +38,9 @@ async fn main() {
         .await
         .expect("Failed to create SQLite connection pool");
 
-    sqlx::migrate!("./migrations")
-        .run(&pool)
+    initialize_database(&pool)
         .await
-        .expect("Failed to run database migrations");
+        .expect("Failed to initialize database");
     // Build the application with a route
     let app = Router::new()
         .route("/list_keys", get(list_keys))

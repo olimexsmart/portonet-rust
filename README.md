@@ -65,7 +65,10 @@ Set `DATABASE_URL` to a SQLite URL, for example:
 
 ```
 DATABASE_URL=sqlite://portonet.sqlite
+MASTER_PASSWORD=your-master-password
 ```
+
+The master password is configured through `MASTER_PASSWORD` and is not stored in the database. The latest row in the `system` table is the current state; state changes append a new row so prior states remain available.
 
 The database file and its tables are created automatically when the backend starts.
 

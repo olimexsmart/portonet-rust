@@ -41,7 +41,7 @@ pub enum KeyCheckResult {
 
 pub async fn check_key(
     pool: &sqlx::SqlitePool,
-    key_to_check: String,
+    key_to_check: &str,
 ) -> Result<KeyCheckResult, sqlx::Error> {
     let result = sqlx::query!(
         "SELECT expdate, revoked FROM keys WHERE ukey = ?",
@@ -78,6 +78,21 @@ pub async fn insert_or_update_key(
         .await?;
     transaction.commit().await?;
     Ok(row.id as i32)
+}
+
+pub async fn update_key_last_used(
+    pool: &sqlx::SqlitePool,
+    key_last_used: String,
+) -> Result<(), sqlx::Error> {
+    let last_used = Utc::now().naive_utc();
+    sqlx::query!(
+        "UPDATE keys SET lastused = ? WHERE ukey = ?",
+        last_used,
+        key_last_used
+    )
+    .execute(pool)
+    .await?;
+    Ok(()) 
 }
 
 pub async fn update_revoke_key(

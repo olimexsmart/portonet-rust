@@ -16,7 +16,6 @@ sqlx = { version = "0.8.0", features = [
     "sqlite",
     "runtime-tokio",
     "chrono",
-    "migrate",
     "macros",
 ] }
 tokio = { version = "1.39.2", features = ["rt-multi-thread"] }
