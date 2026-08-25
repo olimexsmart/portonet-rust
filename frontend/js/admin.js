@@ -9,6 +9,20 @@ const API_LIST_LOGS = 'list_logs'
 // Common variabile
 let mode, interval, justTest
 
+function formatUtcDate(dateString) {
+  const date = new Date(dateString + 'Z');
+
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${hours}:${minutes}:${seconds} ${day}-${month}-${year}`;
+}
+
 // Once DOM is loaded, attach events
 document.addEventListener("DOMContentLoaded", () => {
     const submitBtn = document.getElementById('submit');
@@ -149,10 +163,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     for (let i = 0; i < j.length; i++) {
                         let badgeClass = 'primary'
                         let badgeText = 'OK'
+                        let formattedExpDate = formatUtcDate(j[i].exp_date)
+
+                        let formattedLastUsedDate = 'Never Used'
+                        if(j[i].last_used !== null)
+                            formattedLastUsedDate = formatUtcDate(j[i].last_used)
+
                         if (j[i].revoked == '1') {
                             badgeClass = 'danger'
                             badgeText = 'REVOKED'
-                        } else if (Date.parse(j[i].exp_date) - Date.now() < 0) {
+                        } else if (Date.parse(j[i].exp_date + 'Z') - Date.now() < 0) {
                             badgeClass = 'warning'
                             badgeText = 'EXPIRED'
                         }
@@ -160,8 +180,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             `<li class="list-group-item d-flex justify-content-between align-items-start">` +
                             `<div class="ms-2 me-auto">` +
                             `<div class="fw-bold fs-4">${j[i].ukey}</div>` +
-                            `<b>Last used:</b> ${j[i].last_used}</br>` +
-                            `<b>Expiration date:</b> ${j[i].exp_date}</br>` +
+                            `<b>Last used:</b> ${formattedLastUsedDate}</br>` +
+                            `<b>Expiration date:</b> ${formattedExpDate}</br>` +
                             `<b>Used</b> ${j[i].n_used} times` +
                             `</div>` +
                             `<span class="badge bg-${badgeClass} rounded-pill">${badgeText}` +

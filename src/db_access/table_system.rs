@@ -36,7 +36,13 @@ pub async fn check_master_password(
     if latest_state(pool).await?.is_none() {
         insert_default_row(pool).await?;
     }
-    Ok(configured_mp == mp_to_check)
+    if configured_mp == mp_to_check {
+        // Reset system locked with correct master password
+        handle_attempt_ok(pool).await?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
 
 #[derive(Serialize)]
@@ -61,15 +67,13 @@ pub async fn get_system_counters(pool: &sqlx::SqlitePool) -> Result<SystemCounte
 }
 
 pub async fn handle_attempt_ok(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
-    let (nopenings, nerrors, _, lastattempt, lockeduntil) = latest_or_default(pool).await?;
+    let (nopenings, nerrors, _, _, _) = latest_or_default(pool).await?;
     sqlx::query(
         "INSERT INTO system (nopenings, nerrors, nattempts, lastattempt, lockeduntil)
-         VALUES (?, ?, 0, ?, ?)",
+         VALUES (?, ?, 0, NULL, NULL)",
     )
     .bind(nopenings + 1)
     .bind(nerrors)
-    .bind(lastattempt)
-    .bind(lockeduntil)
     .execute(pool)
     .await?;
     Ok(())
@@ -79,7 +83,7 @@ pub async fn handle_attempt_failed(pool: &sqlx::SqlitePool) -> Result<(), sqlx::
     let (nopenings, nerrors, nattempts, lastattempt, previous_lockeduntil) =
         latest_or_default(pool).await?;
     let new_attempts = nattempts + 1;
-    let locked_until = if new_attempts > 10 {
+    let locked_until = if new_attempts > 5 {
         Some((Utc::now() + Duration::minutes(15)).naive_utc())
     } else {
         previous_lockeduntil

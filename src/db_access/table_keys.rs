@@ -63,6 +63,8 @@ pub async fn insert_or_update_key(
     ukey: String,
     exp_date: NaiveDateTime,
 ) -> Result<i32, sqlx::Error> {
+    println!("{}", exp_date);
+
     let mut transaction = pool.begin().await?;
     sqlx::query!(
         "INSERT INTO keys (ukey, expdate) VALUES (?, ?)
@@ -86,7 +88,7 @@ pub async fn update_key_last_used(
 ) -> Result<(), sqlx::Error> {
     let last_used = Utc::now().naive_utc();
     sqlx::query!(
-        "UPDATE keys SET lastused = ? WHERE ukey = ?",
+        "UPDATE keys SET lastused = ?, nused = nused + 1 WHERE ukey = ?",
         last_used,
         key_last_used
     )
