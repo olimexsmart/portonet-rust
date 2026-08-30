@@ -2,20 +2,14 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use serde::Serialize;
 use std::io;
 
-type SystemState = (
-    i64,
-    i64,
-    i64,
-    Option<NaiveDateTime>,
-    Option<NaiveDateTime>,
-);
+type SystemState = (i64, i64, i64, Option<NaiveDateTime>, Option<NaiveDateTime>);
 
-async fn latest_state(pool: &sqlx::SqlitePool) -> Result<Option<SystemState>, sqlx::Error> {
+async fn latest_state(pool: &sqlx::SqlitePool) -> Result<SystemState, sqlx::Error> {
     sqlx::query_as::<_, SystemState>(
         "SELECT nopenings, nerrors, nattempts, lastattempt, lockeduntil
          FROM system ORDER BY id DESC LIMIT 1",
     )
-    .fetch_optional(pool)
+    .fetch_one(pool)
     .await
 }
 
@@ -33,9 +27,6 @@ pub async fn check_master_password(
     mp_to_check: String,
 ) -> Result<bool, sqlx::Error> {
     let configured_mp = configured_master_password()?;
-    if latest_state(pool).await?.is_none() {
-        insert_default_row(pool).await?;
-    }
     if configured_mp == mp_to_check {
         // Reset system locked with correct master password
         handle_attempt_ok(pool).await?;
@@ -52,13 +43,7 @@ pub struct SystemCounter {
 }
 
 pub async fn get_system_counters(pool: &sqlx::SqlitePool) -> Result<SystemCounter, sqlx::Error> {
-    let state = match latest_state(pool).await? {
-        Some(state) => state,
-        None => {
-            insert_default_row(pool).await?;
-            (0, 0, 0, None, None)
-        }
-    };
+    let state = latest_state(pool).await?;
 
     Ok(SystemCounter {
         n_openings: state.0 as i32,
@@ -67,7 +52,7 @@ pub async fn get_system_counters(pool: &sqlx::SqlitePool) -> Result<SystemCounte
 }
 
 pub async fn handle_attempt_ok(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
-    let (nopenings, nerrors, _, _, _) = latest_or_default(pool).await?;
+    let (nopenings, nerrors, _, _, _) = latest_state(pool).await?;
     sqlx::query(
         "INSERT INTO system (nopenings, nerrors, nattempts, lastattempt, lockeduntil)
          VALUES (?, ?, 0, NULL, NULL)",
@@ -81,7 +66,7 @@ pub async fn handle_attempt_ok(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Erro
 
 pub async fn handle_attempt_failed(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
     let (nopenings, nerrors, nattempts, lastattempt, previous_lockeduntil) =
-        latest_or_default(pool).await?;
+        latest_state(pool).await?;
     let new_attempts = nattempts + 1;
     let locked_until = if new_attempts > 5 {
         Some((Utc::now() + Duration::minutes(15)).naive_utc())
@@ -104,30 +89,18 @@ pub async fn handle_attempt_failed(pool: &sqlx::SqlitePool) -> Result<(), sqlx::
 }
 
 pub async fn is_system_locked(pool: &sqlx::SqlitePool) -> Result<bool, sqlx::Error> {
-    let lockeduntil = match latest_state(pool).await? {
-        Some(state) => state.4,
-        None => {
-            insert_default_row(pool).await?;
-            None
-        }
-    };
+    let lockeduntil = latest_state(pool).await?.4;
 
     Ok(lockeduntil.is_some_and(|value| value > Utc::now().naive_utc()))
 }
 
-async fn latest_or_default(pool: &sqlx::SqlitePool) -> Result<SystemState, sqlx::Error> {
-    match latest_state(pool).await? {
-        Some(state) => Ok(state),
-        None => {
-            insert_default_row(pool).await?;
-            Ok((0, 0, 0, None, None))
-        }
-    }
-}
-
-async fn insert_default_row(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
-    sqlx::query("INSERT INTO system DEFAULT VALUES")
-        .execute(pool)
-        .await?;
+pub(crate) async fn insert_default_row(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "INSERT INTO system (nopenings, nerrors, nattempts)
+         SELECT 0, 0, 0
+         WHERE NOT EXISTS (SELECT 1 FROM system)",
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }

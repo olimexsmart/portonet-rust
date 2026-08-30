@@ -1,5 +1,6 @@
 use chrono::{NaiveDateTime, Utc};
 use serde::Serialize;
+use sqlx::Row;
 
 #[derive(Serialize)]
 pub struct UKey {
@@ -12,9 +13,9 @@ pub struct UKey {
 }
 
 pub async fn select_keys(pool: &sqlx::SqlitePool) -> Result<Vec<UKey>, sqlx::Error> {
-    let rows = sqlx::query!(
-        "SELECT id as \"id!: i64\", ukey, expdate, lastused, nused, revoked
-         FROM keys ORDER BY id"
+    let rows = sqlx::query(
+        "SELECT id, ukey, expdate, lastused, nused, revoked
+         FROM keys ORDER BY id",
     )
     .fetch_all(pool)
     .await?;
@@ -22,12 +23,12 @@ pub async fn select_keys(pool: &sqlx::SqlitePool) -> Result<Vec<UKey>, sqlx::Err
     Ok(rows
         .into_iter()
         .map(|row| UKey {
-            id: row.id as i32,
-            ukey: row.ukey,
-            exp_date: row.expdate,
-            last_used: row.lastused,
-            n_used: row.nused as i32,
-            revoked: row.revoked != 0,
+            id: row.get::<i64, _>("id") as i32,
+            ukey: row.get("ukey"),
+            exp_date: row.get("expdate"),
+            last_used: row.get("lastused"),
+            n_used: row.get::<i64, _>("nused") as i32,
+            revoked: row.get::<i64, _>("revoked") != 0,
         })
         .collect())
 }
@@ -43,16 +44,16 @@ pub async fn check_key(
     pool: &sqlx::SqlitePool,
     key_to_check: &str,
 ) -> Result<KeyCheckResult, sqlx::Error> {
-    let result = sqlx::query!(
-        "SELECT expdate, revoked FROM keys WHERE ukey = ?",
-        key_to_check
-    )
-    .fetch_optional(pool)
-    .await?;
+    let result = sqlx::query("SELECT expdate, revoked FROM keys WHERE ukey = ?")
+        .bind(key_to_check)
+        .fetch_optional(pool)
+        .await?;
 
     match result {
-        Some(row) if row.revoked != 0 => Ok(KeyCheckResult::Revoked),
-        Some(row) if row.expdate < Utc::now().naive_utc() => Ok(KeyCheckResult::Expired),
+        Some(row) if row.get::<i64, _>("revoked") != 0 => Ok(KeyCheckResult::Revoked),
+        Some(row) if row.get::<NaiveDateTime, _>("expdate") < Utc::now().naive_utc() => {
+            Ok(KeyCheckResult::Expired)
+        }
         Some(_) => Ok(KeyCheckResult::Valid),
         None => Ok(KeyCheckResult::Invalid),
     }
@@ -66,20 +67,21 @@ pub async fn insert_or_update_key(
     println!("{}", exp_date);
 
     let mut transaction = pool.begin().await?;
-    sqlx::query!(
+    sqlx::query(
         "INSERT INTO keys (ukey, expdate) VALUES (?, ?)
          ON CONFLICT (ukey) DO UPDATE SET expdate = excluded.expdate, revoked = 0",
-        ukey,
-        exp_date
     )
+    .bind(&ukey)
+    .bind(exp_date)
     .execute(&mut *transaction)
     .await?;
 
-    let row = sqlx::query!("SELECT id as \"id!: i64\" FROM keys WHERE ukey = ?", ukey)
+    let row = sqlx::query("SELECT id FROM keys WHERE ukey = ?")
+        .bind(&ukey)
         .fetch_one(&mut *transaction)
         .await?;
     transaction.commit().await?;
-    Ok(row.id as i32)
+    Ok(row.get::<i64, _>("id") as i32)
 }
 
 pub async fn update_key_last_used(
@@ -87,28 +89,27 @@ pub async fn update_key_last_used(
     key_last_used: String,
 ) -> Result<(), sqlx::Error> {
     let last_used = Utc::now().naive_utc();
-    sqlx::query!(
-        "UPDATE keys SET lastused = ?, nused = nused + 1 WHERE ukey = ?",
-        last_used,
-        key_last_used
-    )
-    .execute(pool)
-    .await?;
-    Ok(()) 
+    sqlx::query("UPDATE keys SET lastused = ?, nused = nused + 1 WHERE ukey = ?")
+        .bind(last_used)
+        .bind(key_last_used)
+        .execute(pool)
+        .await?;
+    Ok(())
 }
 
 pub async fn update_revoke_key(
     pool: &sqlx::SqlitePool,
     key_to_revoke: String,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query!("UPDATE keys SET revoked = 1 WHERE ukey = ?", key_to_revoke)
+    sqlx::query("UPDATE keys SET revoked = 1 WHERE ukey = ?")
+        .bind(key_to_revoke)
         .execute(pool)
         .await?;
     Ok(())
 }
 
 pub async fn update_revoke_all_keys(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
-    sqlx::query!("UPDATE keys SET revoked = 1")
+    sqlx::query("UPDATE keys SET revoked = 1")
         .execute(pool)
         .await?;
     Ok(())

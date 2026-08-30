@@ -1,14 +1,27 @@
 Learn Rust while refreshing a very useful project of mine. 
-### GOALS V1
+
+## GOALS V1
 - [x] Rewrite all PHP functionality in Rust
 - [x] Use SQLite
-- [ ] Do not modify frontend for the moment except for some API calls
-- [ ] Make it a docker
-### GOALS V2
-- [ ] Bump frontend to a recent Bootstrap version
+- [x] Do not modify frontend for the moment except for some API calls
+- [x] Make it a docker
+- [ ] Every API call is logged along with the parameters and IP
+- [x] The door is opened through an API call configurable via ENV file
+- [x] If system table is empty should be initialized 
+- [x] Tables should be created if not existent
+- [ ] Every API that checks master password should also be subject to system block to avoid brute forcing
+## GOALS V2
+- [v] Bump frontend to a recent Bootstrap version
 - [ ] Implement Web AUTH for biometric login
+- [ ] Delete unused buttons and related APIs
+- [ ] Avoid modal, display box or a banner (nice libraries out there)
 
-### APIs
+## Run with auto-reload
+```
+cargo watch -c -w src/ -x 'run'
+```
+
+## APIs
 - `/add_key`
 	- Inputs: `[masterPassword, newKey, duration]`
 	- Verify master password validity and then insert new key with the specified duration
@@ -59,33 +72,47 @@ Learn Rust while refreshing a very useful project of mine.
 	- If old password is correct, change to the new one
 	- At database creation the master password is set no null, call this method to initialize. Call with both parameter set to the same new password value.
 
-### Database setup
+## ENV setup
 
-Set `DATABASE_URL` to a SQLite URL, for example:
+The `.env` file contains the following variables:
 
 ```
 DATABASE_URL=sqlite://portonet.sqlite
 MASTER_PASSWORD=your-master-password
+BEARER_HOME_ASSISTANT=your-home-assistant-token
+URL_HOME_ASSISTANT=https://your-home-assistant-host/api/services/light/toggle
+ENTITY_HOME_ASSISTANT=light.your_entity
 ```
 
-The master password is configured through `MASTER_PASSWORD` and is not stored in the database. The latest row in the `system` table is the current state; state changes append a new row so prior states remain available.
+- `DATABASE_URL`: SQLite connection URL for the application database.
+- `MASTER_PASSWORD`: Master password used to authorize protected API operations; it is not stored in the database.
+- `BEARER_HOME_ASSISTANT`: Bearer token used to authenticate requests to Home Assistant.
+- `URL_HOME_ASSISTANT`: Home Assistant endpoint called when the door is opened.
+- `ENTITY_HOME_ASSISTANT`: Home Assistant entity targeted by that request, such as `light.insegna_o`.
 
 The database file and its tables are created automatically when the backend starts.
 
-SQLx compile-time query checking also needs `DATABASE_URL` while building:
+## Docker
 
-```
-DATABASE_URL=sqlite:///absolute/path/portonet.sqlite cargo check
+If running from MacOS, install `brew install colima`. Then start it with `colima start`. When done, `colima stop`.
+
+### Build the image
+This commands cross-compiles. Not necessary if building already from a Linux machine.
+```bash
+docker buildx build --platform linux/amd64 -t portonet:latest --load .
 ```
 
-### More Backend
-- [ ] Every API call is logged along with the parameters and IP
-- [x] The door is opened through an API call configurable via ENV file
-- [x] If system table is empty should be initialized 
-- [x] Tables should be created if not existent
-- [ ] Every API that checks master password should also be subject to system block to avoid brute forcing
+### Export the image to a tar file
 
-### Run with auto-reload
+```bash
+docker save -o portonet.tar portonet:latest
 ```
-cargo watch -c -w src/ -x 'run'
-```
+
+### Deploy from the tar file
+
+1. Copy `portonet.tar` to the target machine 
+2. Create a `portonet-data` folder, copy there an existing `portonet.sqlite` file if available
+3. `docker load -i portonet.tar`
+4. `docker run -d --name portonet -p 8181:3000 -v /home/olli/portonet-data:/data portonet:latest`
+
+Change the 8181 value to the desired port. 
