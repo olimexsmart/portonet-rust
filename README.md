@@ -99,6 +99,9 @@ If running from MacOS, install `brew install colima`. Then start it with `colima
 ### Build the image
 This commands cross-compiles. Not necessary if building already from a Linux machine.
 ```bash
+# Native
+docker build -t portonet:latest .
+# Cross compile
 docker buildx build --platform linux/amd64 -t portonet:latest --load .
 ```
 

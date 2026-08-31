@@ -9,9 +9,8 @@ RUN apk add --no-cache \
   musl-dev \
   pkgconf \
   sqlite-dev \
-  openssl-dev 
-
-# openssl-libs-static
+  openssl-dev \
+  openssl-libs-static
 
 # Copy the full crate so Cargo has the source, lockfile, and frontend assets.
 COPY Cargo.toml Cargo.lock ./
