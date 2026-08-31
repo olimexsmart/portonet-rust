@@ -72,26 +72,6 @@ cargo watch -c -w src/ -x 'run'
 	- If old password is correct, change to the new one
 	- At database creation the master password is set no null, call this method to initialize. Call with both parameter set to the same new password value.
 
-## ENV setup
-
-The `.env` file contains the following variables:
-
-```
-DATABASE_URL=sqlite://portonet.sqlite
-MASTER_PASSWORD=your-master-password
-BEARER_HOME_ASSISTANT=your-home-assistant-token
-URL_HOME_ASSISTANT=https://your-home-assistant-host/api/services/light/toggle
-ENTITY_HOME_ASSISTANT=light.your_entity
-```
-
-- `DATABASE_URL`: SQLite connection URL for the application database.
-- `MASTER_PASSWORD`: Master password used to authorize protected API operations; it is not stored in the database.
-- `BEARER_HOME_ASSISTANT`: Bearer token used to authenticate requests to Home Assistant.
-- `URL_HOME_ASSISTANT`: Home Assistant endpoint called when the door is opened.
-- `ENTITY_HOME_ASSISTANT`: Home Assistant entity targeted by that request, such as `light.insegna_o`.
-
-The database file and its tables are created automatically when the backend starts.
-
 ## Docker
 
 If running from MacOS, install `brew install colima`. Then start it with `colima start`. When done, `colima stop`.
@@ -115,7 +95,29 @@ docker save -o portonet.tar portonet:latest
 
 1. Copy `portonet.tar` to the target machine 
 2. Create a `portonet-data` folder, copy there an existing `portonet.sqlite` file if available
-3. `docker load -i portonet.tar`
-4. `docker run -d --name portonet -p 8181:3000 -v /home/olli/portonet-data:/data portonet:latest`
+3. Create an env file on the target machine, for example `/mnt/fastdisk/docker-data/portonet.env`, containing:
+
+```env
+DATABASE_URL=sqlite:/data/portonet.sqlite
+MASTER_PASSWORD=your-master-password
+BEARER_HOME_ASSISTANT=your-home-assistant-token
+URL_HOME_ASSISTANT=https://your-home-assistant-host/api/services/button/press
+ENTITY_HOME_ASSISTANT=button.apri_portone
+```
+
+4. Load the image: `docker load -i portonet.tar`
+5. Start the container, passing the env file explicitly:
+
+```bash
+docker run -d \
+  --name portonet \
+  -p 8181:3000 \
+  --env-file /mnt/fastdisk/docker-data/portonet.env \
+  -v /mnt/fastdisk/docker-data/portonet-data:/data \
+  --restart unless-stopped \
+  portonet:latest
+```
 
 Change the 8181 value to the desired port. 
+
+The env file stays on the target machine and does not go inside `portonet-data`; that directory is used for the SQLite database. Use the Docker database URL shown above so the database is stored in the mounted `/data` volume.

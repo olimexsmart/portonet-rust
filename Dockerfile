@@ -37,7 +37,6 @@ WORKDIR /app
 COPY --from=builder /build/portonet/target/release/portonet /app/portonet
 # Copy the browser assets and favicon the app serves at runtime.
 COPY --from=builder /build/portonet/frontend/ /app/frontend/
-COPY --from=builder /build/portonet/favicon.ico /app/favicon.ico
 
 # Default runtime config can be overridden with docker run -e ...
 ENV DATABASE_URL=sqlite:/data/portonet.sqlite
