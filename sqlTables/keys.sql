@@ -1,9 +1,0 @@
-CREATE TABLE "keys" (
-  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "ukey" TEXT NOT NULL,
-  "expdate" TIMESTAMP NOT NULL,
-  "lastused" TIMESTAMP,
-  "nused" INTEGER NOT NULL DEFAULT 0,
-  "revoked" INTEGER NOT NULL DEFAULT 0,
-  UNIQUE ("ukey")
-);

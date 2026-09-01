@@ -50,7 +50,7 @@ async fn main() {
         .route("/revoke_all_keys", delete(revoke_all_keys))
         .route("/open_door", put(open_door))
         .route("/list_logs", get(list_logs))
-        .nest_service("/", ServeDir::new("frontend"))
+        .fallback_service(ServeDir::new("frontend"))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000

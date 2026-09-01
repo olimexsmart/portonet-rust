@@ -4,7 +4,10 @@
     "adduser",
     "apri",
     "buildx",
+    "chrono",
+    "dotenvy",
     "fastdisk",
+    "jsonwebtoken",
     "lastattempt",
     "libgcc",
     "lockeduntil",
@@ -13,6 +16,9 @@
     "nopenings",
     "Portone",
     "portonet",
+    "reqwest",
+    "serde",
+    "sqlx",
     "ukey"
   ]
 }

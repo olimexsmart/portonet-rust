@@ -38,7 +38,7 @@ COPY --from=builder /build/portonet/target/release/portonet /app/portonet
 # Copy the browser assets and favicon the app serves at runtime.
 COPY --from=builder /build/portonet/frontend/ /app/frontend/
 
-# Default runtime config can be overridden with docker run -e ...
+# Default runtime config 
 ENV DATABASE_URL=sqlite:/data/portonet.sqlite
 ENV PORT=3000
 ENV LICENSE_REFRESH_DAYS=30
